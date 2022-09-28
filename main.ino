@@ -1,19 +1,14 @@
-#include <avr/interrupt.h>
-
 // pin definition
 #define vIn A0
 #define LED 5
 #define BUTTON 4
 
 // data typed required for rolling average
-double N = 500.0;
-double avg = 2.5;
+double N = 300.0;
+double avg = 2.5;     // doping value to start average
 
 // profile values
 double profile1Val = 2.2;
-
-// button interrupt
-volatile int counter = 0;
 
 void setup()
 {
@@ -60,12 +55,14 @@ void profile3()   // midday
 void alert()
 {
   unsigned long startTime = millis();
-  unsigned long currentTime = 0;
+  unsigned long currentTime = millis();
   while ((currentTime - startTime) < 10000)
   {
     digitalWrite(LED, HIGH);
+    Serial.println("LED is ON");
     delay(300);
     digitalWrite(LED, LOW);
+    Serial.println("LED is OFF");
     delay(300);
     currentTime = millis();
   }
@@ -75,8 +72,8 @@ void alert()
 void loop()
 {
   avg = movingAverage(avg);
-  Serial.println(counter);
-  if (counter > 0)
+
+  if (avg<1.2)
   {
     alert();
   }
