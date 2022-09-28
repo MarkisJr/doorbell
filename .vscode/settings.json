@@ -1,0 +1,10 @@
+{
+    "cSpell.words": [
+        "millis",
+        "PCICR",
+        "PCINT",
+        "PCMSK",
+        "vect"
+    ],
+    "C_Cpp.errorSquiggles": "EnabledIfIncludesResolve"
+}
