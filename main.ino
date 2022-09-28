@@ -10,6 +10,9 @@ double avg = 2.5;     // doping value to start average
 // profile values
 double profile1Val = 2.2;
 
+// alert trigger
+int isOn = 0;
+
 void setup()
 {
   Serial.begin(9600); // initialise serial bus
@@ -54,17 +57,22 @@ void profile3()   // midday
 
 void alert()
 {
-  unsigned long startTime = millis();
-  unsigned long currentTime = millis();
-  while ((currentTime - startTime) < 10000)
+  if (isOn == 0)
   {
-    digitalWrite(LED, HIGH);
-    Serial.println("LED is ON");
-    delay(300);
-    digitalWrite(LED, LOW);
-    Serial.println("LED is OFF");
-    delay(300);
-    currentTime = millis();
+    isOn = 1;
+    unsigned long startTime = millis();
+    unsigned long currentTime = millis();
+    while ((currentTime - startTime) < 10000)
+    {
+      digitalWrite(LED, HIGH);
+      Serial.println("LED is ON");
+      delay(300);
+      digitalWrite(LED, LOW);
+      Serial.println("LED is OFF");
+      delay(300);
+      currentTime = millis();
+    }
+    isOn = 0;
   }
 }
 
