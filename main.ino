@@ -11,28 +11,28 @@ double avg = 2.5;     // doping value to start average
 double profile1Val = 2.2;
 
 // alert trigger
-int isOn = 0;
+volatile int isOn = 0;
 
 void setup()
 {
   Serial.begin(9600); // initialise serial bus
+
+  // initialise pins for circuit control
+  pinMode(vIn, INPUT);
+  pinMode(LED, OUTPUT);
+  pinMode(BUTTON, INPUT);
 
   // interrupt code
   cli();
   PCICR |= 0b00000100;
   PCMSK2 |= 0b00010000;
   sei();
-  
-  // initialise pins for circuit control
-  pinMode(vIn, INPUT);
-  pinMode(LED, OUTPUT);
-  pinMode(BUTTON, INPUT);
 }
 
 // converts analogue reading to double precision voltage between 0-5V
 double getVoltage()
 {
-  return ((double)(analogRead(vIn)) / 1023) * 5.0;
+  return 5.0 - (((double)(analogRead(vIn)) / 1023) * 5.0);
 }
 
 double movingAverage(double average)
@@ -42,52 +42,45 @@ double movingAverage(double average)
   return average;
 }
 
-void profile1()   // dark
-{
-  
-}
-
-void profile2()   // morning/afternoon
-{
-}
-
-void profile3()   // midday
-{
-}
-
 void alert()
 {
-  if (isOn == 0)
+  unsigned long startTime = millis();
+  unsigned long currentTime = millis();
+  while ((currentTime - startTime) < 10000)
   {
-    isOn = 1;
-    unsigned long startTime = millis();
-    unsigned long currentTime = millis();
-    while ((currentTime - startTime) < 10000)
-    {
-      digitalWrite(LED, HIGH);
-      Serial.println("LED is ON");
-      delay(300);
-      digitalWrite(LED, LOW);
-      Serial.println("LED is OFF");
-      delay(300);
-      currentTime = millis();
-    }
-    isOn = 0;
+    digitalWrite(LED, HIGH);
+    Serial.println("LED is ON");
+    delay(300);
+    digitalWrite(LED, LOW);
+    Serial.println("LED is OFF");
+    delay(300);
+    currentTime = millis();
   }
+  isOn = 0;
 }
 
 // the loop function runs over and over again forever
 void loop()
 {
   avg = movingAverage(avg);
+  Serial.println(avg);
 
-  if (avg<1.2)
+  if (avg<0.5)
   {
     alert();
   }
 }
 
+void test()
+{
+  isOn++;
+}
+
 ISR(PCINT2_vect)
 {
-  alert();
+  if (isOn == 0)
+  {
+    isOn++;
+    alert();
+  }
 }
