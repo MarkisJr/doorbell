@@ -4,14 +4,15 @@
 #define BUTTON 4
 
 // data typed required for rolling average
-double N = 300.0;
-double avg = 2.5;     // doping value to start average
-
-// profile values
-double profile1Val = 2.2;
+double fastN = 300.0;
+double slowN = 2000.0;
+double fastMovingAvg = 2.5; // dope the starting value for the algorithm
+double slowMovingAvg = 0;
 
 // alert trigger
-volatile int isOn = 0;
+volatile bool isOn = false;
+
+bool hasDoped = false;
 
 void setup()
 {
@@ -35,7 +36,7 @@ double getVoltage()
   return 5.0 - (((double)(analogRead(vIn)) / 1023) * 5.0);
 }
 
-double movingAverage(double average)
+double movingAverage(double average, double N)
 {
   average -= average / N;
   average += getVoltage() / N;
@@ -62,18 +63,11 @@ void alert()
 // the loop function runs over and over again forever
 void loop()
 {
-  avg = movingAverage(avg);
-  Serial.println(avg);
-
-  if (avg<0.5)
-  {
-    alert();
-  }
-}
-
-void test()
-{
-  isOn++;
+  
+  
+  fastMovingAvg = movingAverage(fastMovingAvg, fastN);
+  slowMovingAvg = movingAverage(slowMovingAvg, slowN);
+  Serial.println(slowMovingAvg);
 }
 
 ISR(PCINT2_vect)
