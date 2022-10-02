@@ -1,3 +1,11 @@
+/*
+  Doorbell Control Code (DCC)
+  Written by Noah West 620683
+  September/October UTAS 2022
+  Group xxxxx
+  License: MIT
+*/
+
 // pin definition
 #define vIn A0
 #define LED 5
@@ -14,6 +22,7 @@ volatile bool isOn = false;
 
 bool hasDoped = false;
 
+// initialises pins and other board functionality
 void setup()
 {
   Serial.begin(9600); // initialise serial bus
@@ -23,7 +32,7 @@ void setup()
   pinMode(LED, OUTPUT);
   pinMode(BUTTON, INPUT);
 
-  // interrupt code
+    
   cli();
   PCICR |= 0b00000100;
   PCMSK2 |= 0b00010000;
@@ -43,6 +52,7 @@ double movingAverage(double average, double N)
   return average;
 }
 
+// function that blinks light every 300ms over 10s by use of a time delta
 void alert()
 {
   unsigned long startTime = millis();
@@ -57,13 +67,17 @@ void alert()
     delay(300);
     currentTime = millis();
   }
-  isOn = 0;
 }
 
 // the loop function runs over and over again forever
 void loop()
 {
-  
+  // if statement dopes the slow moving average to current light level such that functionality is ensured when device is powered on
+  if (!hasDoped)
+  {
+    hasDoped = false;
+    slowMovingAvg = getVoltage();
+  }
   
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);

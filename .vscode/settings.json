@@ -4,6 +4,7 @@
         "PCICR",
         "PCINT",
         "PCMSK",
+        "UTAS",
         "vect"
     ],
     "C_Cpp.errorSquiggles": "EnabledIfIncludesResolve"
