@@ -2,7 +2,7 @@
   Doorbell Control Code (DCC)
   Written by Noah West 620683
   September/October UTAS 2022
-  Group xxxxx
+  Group DPS
   License: MIT
 */
 
@@ -11,16 +11,23 @@
 #define LED 5
 #define BUTTON 4
 
-// data typed required for rolling average
+// rolling average configuration
 double fastN = 300.0;
-double slowN = 2000.0;
+double slowN = 1000.0;
 double fastMovingAvg = 2.5; // dope the starting value for the algorithm
 double slowMovingAvg = 0;
+bool hasDoped = false;
+
+// general configuration
+double sensitivity = 0.1;
 
 // alert trigger
 volatile bool isOn = false;
 
-bool hasDoped = false;
+// cooldown period of light censor
+unsigned long startTime = 0;
+unsigned long currentTime = 501;
+unsigned long coolDown = 500;
 
 // initialises pins and other board functionality
 void setup()
@@ -39,12 +46,21 @@ void setup()
   sei();
 }
 
-// converts analogue reading to double precision voltage between 0-5V
+/*
+  calculates the current voltage drop across the LDR
+  @returns the voltage drop across the LDR
+*/
 double getVoltage()
 {
   return 5.0 - (((double)(analogRead(vIn)) / 1023) * 5.0);
 }
 
+/*
+  algorithm that calculates the moving average - credit: https://stackoverflow.com/a/16757630
+  @param average current double average
+  @param N number of samples to be included in the moving average
+  @returns the new moving average value
+*/
 double movingAverage(double average, double N)
 {
   average -= average / N;
@@ -52,12 +68,14 @@ double movingAverage(double average, double N)
   return average;
 }
 
-// function that blinks light every 300ms over 10s by use of a time delta
+/*
+  function that blinks light every 300ms over 10s by use of a time delta
+*/
 void alert()
 {
-  unsigned long startTime = millis();
-  unsigned long currentTime = millis();
-  while ((currentTime - startTime) < 10000)
+  unsigned long alertStartTime = millis();
+  unsigned long alertCurrentTime = millis();
+  while ((alertCurrentTime - alertStartTime) < 10000)
   {
     digitalWrite(LED, HIGH);
     Serial.println("LED is ON");
@@ -65,30 +83,50 @@ void alert()
     digitalWrite(LED, LOW);
     Serial.println("LED is OFF");
     delay(300);
-    currentTime = millis();
+    alertCurrentTime = millis();
   }
+  isOn = false;
 }
 
 // the loop function runs over and over again forever
 void loop()
 {
-  // if statement dopes the slow moving average to current light level such that functionality is ensured when device is powered on
+  // if statement dopes the moving averages to current light level such that functionality is ensured as soon as device is powered on
   if (!hasDoped)
   {
-    hasDoped = false;
+    hasDoped = true;
     slowMovingAvg = getVoltage();
+    fastMovingAvg = getVoltage();
   }
   
+  // updates moving averages with movingAverage algorithm
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
-  Serial.println(slowMovingAvg);
+  Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
+
+  /*
+    if the fast moving average deviates more than sensitivity % from the slow moving average, alert is called
+    
+    there is a short cooldown period between each time the sensor is checked so that the moving average algorithm
+    has time to return to the environments average if the obstruction is removed
+  */  
+  if ((currentTime - startTime) > coolDown)
+  {
+    // by checking if the difference % is < -sensitivity, we can only check for dips in brightness, not increases in brightness
+    if (-sensitivity > (slowMovingAvg-fastMovingAvg)/slowMovingAvg)
+    {
+      alert();
+      startTime = millis();
+    }
+  }
+  currentTime = millis();
 }
 
 ISR(PCINT2_vect)
 {
-  if (isOn == 0)
+  if (!isOn)
   {
-    isOn++;
+    isOn = true;
     alert();
   }
 }
