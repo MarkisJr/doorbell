@@ -103,7 +103,7 @@ void loop()
   // if ISR has triggered due to button press then alert
   if (isOn) alert();
   
-  // if statement dopes the moving averages to current light level such that functionality is ensured as soon as device is powered on
+  // if statement dopes the moving averages to current light level such that functionality is ensured as soon as the device is powered on
   if (!hasDoped)
   {
     hasDoped = true;
@@ -115,7 +115,8 @@ void loop()
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
   // TODO: remove code below
-  //Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
+  // TODO: make graphs
+  Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
 
   /*
     if the fast moving average deviates more than sensitivity % from the slow moving average, alert is called
