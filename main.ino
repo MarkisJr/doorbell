@@ -21,7 +21,7 @@ bool hasDoped = false;
 // general configuration
 double sensitivity = 0.1;
 
-// alert trigger
+// alert triggered by button
 volatile bool isOn = false;
 
 // cooldown period of light censor
@@ -44,6 +44,12 @@ void setup()
   PCICR |= 0b00000100;
   PCMSK2 |= 0b00010000;
   sei();
+}
+
+// function is called when vector is triggered (button push)
+ISR(PCINT2_vect)
+{
+  isOn = true;
 }
 
 /*
@@ -78,10 +84,8 @@ void alert()
   while ((alertCurrentTime - alertStartTime) < 10000)
   {
     digitalWrite(LED, HIGH);
-    Serial.println("LED is ON");
     delay(300);
     digitalWrite(LED, LOW);
-    Serial.println("LED is OFF");
     delay(300);
     alertCurrentTime = millis();
   }
@@ -91,6 +95,9 @@ void alert()
 // the loop function runs over and over again forever
 void loop()
 {
+  // if ISR has triggered due to button press then alert
+  if (isOn) alert();
+  
   // if statement dopes the moving averages to current light level such that functionality is ensured as soon as device is powered on
   if (!hasDoped)
   {
@@ -102,7 +109,7 @@ void loop()
   // updates moving averages with movingAverage algorithm
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
-  Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
+  //Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
 
   /*
     if the fast moving average deviates more than sensitivity % from the slow moving average, alert is called
@@ -120,13 +127,4 @@ void loop()
     }
   }
   currentTime = millis();
-}
-
-ISR(PCINT2_vect)
-{
-  if (!isOn)
-  {
-    isOn = true;
-    alert();
-  }
 }
