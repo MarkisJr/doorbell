@@ -14,7 +14,7 @@
 // rolling average configuration
 double fastN = 300.0;
 double slowN = 1000.0;
-double fastMovingAvg = 2.5; // dope the starting value for the algorithm
+double fastMovingAvg = 0;
 double slowMovingAvg = 0;
 bool hasDoped = false;
 
@@ -39,7 +39,12 @@ void setup()
   pinMode(LED, OUTPUT);
   pinMode(BUTTON, INPUT);
 
-    
+  /*
+    here the the Pin Change Interrupt Control Registry (PCICR) is set such that port d is enabled
+
+    as to make sure only digital pin 4 (D4) triggers the interrupt, a mask is applied for Pin Change Interrupt 20 (PCINT20 aka D4)
+    via setting the Pin Change Mask 2 register bit 5 to 1
+  */
   cli();
   PCICR |= 0b00000100;
   PCMSK2 |= 0b00010000;
@@ -109,6 +114,7 @@ void loop()
   // updates moving averages with movingAverage algorithm
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
+  // TODO: remove code below
   //Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
 
   /*
