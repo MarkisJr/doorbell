@@ -4,6 +4,7 @@
   September/October UTAS 2022
   Group DPS
   License: MIT
+  https://github.com/MarkisJr/doorbell
 */
 
 // pin definition
@@ -26,8 +27,8 @@ volatile bool isOn = false;
 
 // cooldown period of light censor
 unsigned long startTime = 0;
-unsigned long currentTime = 501;
-unsigned long coolDown = 500;
+unsigned long currentTime = 0;
+unsigned long coolDown = 5000;
 
 // initialises pins and other board functionality
 void setup()
@@ -43,7 +44,7 @@ void setup()
     here the the Pin Change Interrupt Control Registry (PCICR) is set such that port d is enabled
 
     as to make sure only digital pin 4 (D4) triggers the interrupt, a mask is applied for Pin Change Interrupt 20 (PCINT20 aka D4)
-    via setting the Pin Change Mask 2 register bit 5 to 1
+    by setting the 5th bit of the Pin Change Mask 2 register to 1
   */
   cli();
   PCICR |= 0b00000100;
@@ -67,7 +68,7 @@ double getVoltage()
 }
 
 /*
-  algorithm that calculates the moving average - credit: https://stackoverflow.com/a/16757630
+  algorithm that calculates the moving average, utilises getVoltage() to grab new values - credit: https://stackoverflow.com/a/16757630
   @param average current double average
   @param N number of samples to be included in the moving average
   @returns the new moving average value
@@ -94,7 +95,7 @@ void alert()
     delay(300);
     alertCurrentTime = millis();
   }
-  isOn = false;
+  isOn = false; // undo the state change caused by the button press
 }
 
 // the loop function runs over and over again forever
@@ -114,17 +115,17 @@ void loop()
   // updates moving averages with movingAverage algorithm
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
-  // TODO: remove code below
-  // TODO: make graphs
-  Serial.println((slowMovingAvg-fastMovingAvg)/slowMovingAvg);
+  Serial.println(fastMovingAvg);
 
   /*
     if the fast moving average deviates more than sensitivity % from the slow moving average, alert is called
     
     there is a short cooldown period between each time the sensor is checked so that the moving average algorithm
     has time to return to the environments average if the obstruction is removed
+
+    as to allow the board to trigger on startup when currentTime < 5000ms, the second condition allows for this
   */  
-  if ((currentTime - startTime) > coolDown)
+  if (((currentTime - startTime) > coolDown) || (currentTime < coolDown))
   {
     // by checking if the difference % is < -sensitivity, we can only check for dips in brightness, not increases in brightness
     if (-sensitivity > (slowMovingAvg-fastMovingAvg)/slowMovingAvg)
