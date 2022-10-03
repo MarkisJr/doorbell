@@ -115,7 +115,13 @@ void loop()
   // updates moving averages with movingAverage algorithm
   fastMovingAvg = movingAverage(fastMovingAvg, fastN);
   slowMovingAvg = movingAverage(slowMovingAvg, slowN);
-  Serial.println(fastMovingAvg);
+  
+  // print data to serial monitor so data can be exported to csv and imported into excel
+  Serial.print(fastMovingAvg);
+  Serial.print(" ");
+  Serial.print(slowMovingAvg);
+  Serial.print(" ");
+  Serial.println(millis());
 
   /*
     if the fast moving average deviates more than sensitivity % from the slow moving average, alert is called
